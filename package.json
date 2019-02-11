@@ -1,0 +1,23 @@
+{
+  "name": "my-cool-action",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "node fuse",
+    "build:watch": "node fuse --variant watch"
+  },
+  "dependencies": {
+    "actions-toolkit": "^1.4.0",
+    "lodash": "^4.17.11",
+    "micromatch": "^3.1.10"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.120",
+    "@types/micromatch": "^3.1.0",
+    "@types/node": "^10.12.24",
+    "fuse-box": "^3.7.0",
+    "tslib": "^1.9.3",
+    "typescript": "^3.3.3",
+    "yargs": "^12.0.5"
+  }
+}
