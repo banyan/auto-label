@@ -52,9 +52,9 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
 
   // TODO: handle stderr
   const { stdout, stderr } = await exec(
-    `git diff --name-only origin/${
-      tools.context.payload.pull_request!.base.ref
-    }`,
+    `git diff --name-only $(git merge-base ${
+      result.repository.pullRequest.headRefOid
+    } ${result.repository.pullRequest.baseRefOid})`,
   );
 
   const diffFiles = stdout.trim().split('\n');
