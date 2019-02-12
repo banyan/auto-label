@@ -44,22 +44,10 @@
     universal-user-agent "^2.0.0"
     url-template "^2.0.8"
 
-"@types/braces@*":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@types/braces/-/braces-2.3.0.tgz#d00ec0a76562b2acb6f29330be33a093e33ed25c"
-  integrity sha512-A3MV5EsLHgShHoJ/XES/fQAnwNISKLrFuH9eNBZY5OkTQB7JPIwbRoExvRpDsNABvkMojnKqKWS8x0m2rLYi+A==
-
 "@types/lodash@^4.14.120":
   version "4.14.120"
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.120.tgz#cf265d06f6c7a710db087ed07523ab8c1a24047b"
   integrity sha512-jQ21kQ120mo+IrDs1nFNVm/AsdFxIx2+vZ347DbogHJPd/JzKNMOqU6HCYin1W6v8l5R9XSO2/e9cxmn7HAnVw==
-
-"@types/micromatch@^3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@types/micromatch/-/micromatch-3.1.0.tgz#514c8a3d24b2680a9b838eeb80e6d7d724545433"
-  integrity sha512-06uA9V7v68RTOzA3ky1Oi0HmCPa+YJ050vM+sTECwkxnHUQnO17TAcNCGX400QT6bldUiPb7ux5oKy0j8ccEDw==
-  dependencies:
-    "@types/braces" "*"
 
 "@types/node@^10.12.24":
   version "10.12.24"
@@ -1287,6 +1275,11 @@ ignore-walk@^3.0.1:
   integrity sha512-DTVlMx3IYPe0/JJcYP7Gxg7ttZZu3IInhuEhbchuqneY9wWe5Ojy2mXLBaQFUQmo0AW2r3qG7m1mg86js+gnlQ==
   dependencies:
     minimatch "^3.0.4"
+
+ignore@^5.0.5:
+  version "5.0.5"
+  resolved "https://registry.yarnpkg.com/ignore/-/ignore-5.0.5.tgz#c663c548d6ce186fb33616a8ccb5d46e56bdbbf9"
+  integrity sha512-kOC8IUb8HSDMVcYrDVezCxpJkzSQWTAzf3olpKM6o9rM5zpojx23O0Fl8Wr4+qJ6ZbPEHqf1fdwev/DS7v7pmA==
 
 inflight@^1.0.4:
   version "1.0.6"

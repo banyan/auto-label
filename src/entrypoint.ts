@@ -1,24 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Toolkit } from 'actions-toolkit';
-import { pick, values } from 'lodash';
-import * as micromatch from 'micromatch';
 import {
   addLabelsToLabelable,
   removeLabelsFromLabelable,
   getPullRequestAndLabels,
 } from './query';
 import { Label, FileEdge, LabelEdge, LabelName } from './interface';
+import { getLabelIds } from './util';
 import * as util from 'util';
+import ignore from 'ignore';
 
 const exec = util.promisify(require('child_process').exec);
 const configFile = '.github/auto-label.json';
 const tools = new Toolkit({
   event: ['pull_request.opened', 'pull_request.synchronize'],
 });
-
-const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
-  JSON.stringify(values(pick(allLabels, labelNames)));
 
 (async () => {
   if (!fs.existsSync(path.join(tools.workspace, configFile))) {
@@ -33,7 +30,7 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
     result = await getPullRequestAndLabels(tools, tools.context.issue());
   } catch (error) {
     console.error('Request failed: ', error.request, error.message);
-    tools.exit.failure('getPullRequestAndLabels has been failed. ');
+    tools.exit.failure('getPullRequestAndLabels has been failed.');
   }
 
   console.log('Result: ', result);
@@ -63,13 +60,15 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
 
   const newLabelNames = new Set(
     diffFiles.reduce((acc: LabelName[], file: string) => {
-      (Object.entries(config.rules) as []).forEach(
-        ([label, pattern]: [string, string | string[]]) => {
-          if (micromatch.any(file, pattern)) {
-            acc.push(label);
-          }
-        },
-      );
+      Object.entries(config.rules).forEach(([label, pattern]) => {
+        if (
+          ignore()
+            .add(pattern as any)
+            .ignores(file)
+        ) {
+          acc.push(label);
+        }
+      });
       return acc;
     }, []),
   );
@@ -106,7 +105,7 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
         labelIds: getLabelIds(allLabels, [...labelNamesToAdd] as LabelName[]),
         labelableId,
       });
-      console.log('Added labels');
+      console.log('Added labels: ', labelNamesToAdd);
     } catch (error) {
       console.error('Request failed: ', error.request, error.message);
       tools.exit.failure('addLabelsToLabelable has been failed. ');
@@ -121,7 +120,7 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
         ] as LabelName[]),
         labelableId,
       });
-      console.log('Removed labels');
+      console.log('Removed labels: ', labelNamesToRemove);
     } catch (error) {
       console.error('Request failed: ', error.request, error.message);
       tools.exit.failure('removeLabelsFromLabelable has been failed. ');

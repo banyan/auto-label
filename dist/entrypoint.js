@@ -8,16 +8,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const path = require("path");
 const actions_toolkit_1 = require("actions-toolkit");
-const lodash_1 = require("lodash");
-const micromatch = require("micromatch");
 const query_1 = require("./query");
+const util_1 = require("./util");
 const util = require("util");
+const ignore_1 = require("ignore");
 const exec = util.promisify(require('child_process').exec);
 const configFile = '.github/auto-label.json';
 const tools = new actions_toolkit_1.Toolkit({
     event: ['pull_request.opened', 'pull_request.synchronize'],
 });
-const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lodash_1.pick(allLabels, labelNames)));
 (async () => {
     if (!fs.existsSync(path.join(tools.workspace, configFile))) {
         tools.exit.neutral('config file does not exist.');
@@ -42,7 +41,9 @@ const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lo
     const diffFiles = stdout.trim().split('\n');
     const newLabelNames = new Set(diffFiles.reduce((acc, file) => {
         Object.entries(config.rules).forEach(([label, pattern]) => {
-            if (micromatch.any(file, pattern)) {
+            if (ignore_1.default()
+                .add(pattern)
+                .ignores(file)) {
                 acc.push(label);
             }
         });
@@ -63,10 +64,10 @@ const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lo
     if (labelNamesToAdd.size > 0) {
         try {
             await query_1.addLabelsToLabelable(tools, {
-                labelIds: getLabelIds(allLabels, [...labelNamesToAdd]),
+                labelIds: util_1.getLabelIds(allLabels, [...labelNamesToAdd]),
                 labelableId,
             });
-            console.log('Added labels');
+            console.log('Added labels: ', labelNamesToAdd);
         }
         catch (error) {
             console.error('Request failed: ', error.request, error.message);
@@ -76,12 +77,12 @@ const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lo
     if (labelNamesToRemove.size > 0) {
         try {
             await query_1.removeLabelsFromLabelable(tools, {
-                labelIds: getLabelIds(allLabels, [
+                labelIds: util_1.getLabelIds(allLabels, [
                     ...labelNamesToRemove,
                 ]),
                 labelableId,
             });
-            console.log('Removed labels');
+            console.log('Removed labels: ', labelNamesToRemove);
         }
         catch (error) {
             console.error('Request failed: ', error.request, error.message);
@@ -155,6 +156,14 @@ exports.removeLabelsFromLabelable = (tools, { labelIds, labelableId, }) => {
         headers: { Accept: 'application/vnd.github.starfire-preview+json' },
     });
 };
+
+});
+___scope___.file("util.js", function(exports, require, module, __filename, __dirname){
+
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const lodash_1 = require("lodash");
+exports.getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lodash_1.pick(allLabels, labelNames)));
 
 });
 return ___scope___.entry = "entrypoint.js";
