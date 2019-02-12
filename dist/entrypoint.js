@@ -13,7 +13,7 @@ const micromatch = require("micromatch");
 const query_1 = require("./query");
 const util = require("util");
 const exec = util.promisify(require('child_process').exec);
-const configFile = '.github/autolabel.json';
+const configFile = '.github/auto-label.json';
 const tools = new actions_toolkit_1.Toolkit({
     event: ['pull_request.opened', 'pull_request.synchronize'],
 });
@@ -31,13 +31,14 @@ const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lo
         console.error('Request failed: ', error.request, error.message);
         tools.exit.failure('getPullRequestAndLabels has been failed. ');
     }
+    console.log('Result: ', result);
     const allLabels = result.repository.labels.edges.reduce((acc, edge) => {
         acc[edge.node.name] = edge.node.id;
         return acc;
     }, {});
     const currentLabelNames = new Set(result.repository.pullRequest.labels.edges.map((edge) => edge.node.name));
     // TODO: handle stderr
-    const { stdout, stderr } = await exec(`git diff --name-only origin/${tools.context.payload.pull_request.base.ref}`);
+    const { stdout, stderr } = await exec(`git diff --name-only $(git merge-base ${result.repository.pullRequest.headRefOid} ${result.repository.pullRequest.baseRefOid})`);
     const diffFiles = stdout.trim().split('\n');
     const newLabelNames = new Set(diffFiles.reduce((acc, file) => {
         Object.entries(config.rules).forEach(([label, pattern]) => {
@@ -50,6 +51,14 @@ const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lo
     const ruledLabelNames = new Set(Object.keys(config.rules));
     const labelNamesToAdd = new Set([...newLabelNames].filter(labelName => !currentLabelNames.has(labelName)));
     const labelNamesToRemove = new Set([...currentLabelNames].filter((labelName) => !newLabelNames.has(labelName) && ruledLabelNames.has(labelName)));
+    console.log('Current status');
+    console.log('allLabels: ', allLabels);
+    console.log('currentLabelNames: ', currentLabelNames);
+    console.log('diffFiles: ', diffFiles);
+    console.log('newLabelNames: ', newLabelNames);
+    console.log('ruledLabelNames: ', ruledLabelNames);
+    console.log('labelNamesToAdd: ', labelNamesToAdd);
+    console.log('labelNamesToRemove: ', labelNamesToRemove);
     const labelableId = result.repository.pullRequest.id;
     if (labelNamesToAdd.size > 0) {
         try {
@@ -57,6 +66,7 @@ const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lo
                 labelIds: getLabelIds(allLabels, [...labelNamesToAdd]),
                 labelableId,
             });
+            console.log('Added labels');
         }
         catch (error) {
             console.error('Request failed: ', error.request, error.message);
@@ -71,6 +81,7 @@ const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lo
                 ]),
                 labelableId,
             });
+            console.log('Removed labels');
         }
         catch (error) {
             console.error('Request failed: ', error.request, error.message);
@@ -89,6 +100,8 @@ exports.getPullRequestAndLabels = (tools, { owner, repo, number, }) => {
     repository(owner: "${owner}", name: "${repo}") {
       pullRequest(number: ${number}) {
         id
+        baseRefOid
+        headRefOid
         baseRefName
         headRefName
         labels(first: 100) {

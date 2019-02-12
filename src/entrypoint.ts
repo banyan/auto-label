@@ -36,6 +36,8 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
     tools.exit.failure('getPullRequestAndLabels has been failed. ');
   }
 
+  console.log('Result: ', result);
+
   const allLabels = result.repository.labels.edges.reduce(
     (acc: Label, edge: LabelEdge) => {
       acc[edge.node.name] = edge.node.id;
@@ -87,6 +89,15 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
     ),
   );
 
+  console.log('Current status');
+  console.log('allLabels: ', allLabels);
+  console.log('currentLabelNames: ', currentLabelNames);
+  console.log('diffFiles: ', diffFiles);
+  console.log('newLabelNames: ', newLabelNames);
+  console.log('ruledLabelNames: ', ruledLabelNames);
+  console.log('labelNamesToAdd: ', labelNamesToAdd);
+  console.log('labelNamesToRemove: ', labelNamesToRemove);
+
   const labelableId = result.repository.pullRequest.id;
 
   if (labelNamesToAdd.size > 0) {
@@ -95,6 +106,7 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
         labelIds: getLabelIds(allLabels, [...labelNamesToAdd] as LabelName[]),
         labelableId,
       });
+      console.log('Added labels');
     } catch (error) {
       console.error('Request failed: ', error.request, error.message);
       tools.exit.failure('addLabelsToLabelable has been failed. ');
@@ -109,6 +121,7 @@ const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
         ] as LabelName[]),
         labelableId,
       });
+      console.log('Removed labels');
     } catch (error) {
       console.error('Request failed: ', error.request, error.message);
       tools.exit.failure('removeLabelsFromLabelable has been failed. ');
