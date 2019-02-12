@@ -28,7 +28,7 @@ const tools = new actions_toolkit_1.Toolkit({
     }
     catch (error) {
         console.error('Request failed: ', error.request, error.message);
-        tools.exit.failure('getPullRequestAndLabels has been failed. ');
+        tools.exit.failure('getPullRequestAndLabels has been failed.');
     }
     console.log('Result: ', result);
     const allLabels = result.repository.labels.edges.reduce((acc, edge) => {
@@ -52,7 +52,7 @@ const tools = new actions_toolkit_1.Toolkit({
     const ruledLabelNames = new Set(Object.keys(config.rules));
     const labelNamesToAdd = new Set([...newLabelNames].filter(labelName => !currentLabelNames.has(labelName)));
     const labelNamesToRemove = new Set([...currentLabelNames].filter((labelName) => !newLabelNames.has(labelName) && ruledLabelNames.has(labelName)));
-    console.log('Current status');
+    console.log(' ---> Current status');
     console.log('allLabels: ', allLabels);
     console.log('currentLabelNames: ', currentLabelNames);
     console.log('diffFiles: ', diffFiles);

@@ -88,7 +88,7 @@ const tools = new Toolkit({
     ),
   );
 
-  console.log('Current status');
+  console.log(' ---> Current status');
   console.log('allLabels: ', allLabels);
   console.log('currentLabelNames: ', currentLabelNames);
   console.log('diffFiles: ', diffFiles);
