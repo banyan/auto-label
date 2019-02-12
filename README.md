@@ -21,7 +21,7 @@ action "Auto label" {
 And configure by creating `.github/auto-label.json` file. The format is `label: rule`. (`{ [key: string]: string | string[] }`)
 Pattern format is following `.gitignore` [spec](https://git-scm.com/docs/gitignore#_pattern_format) using by [node-ignore](https://github.com/kaelzhang/node-ignore).
 
-```
+```json
 {
     "rules": {
         "frontend": ["*.js", "*.css", "*.html"],
