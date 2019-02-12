@@ -12,7 +12,7 @@ import { Label, FileEdge, LabelEdge, LabelName } from './interface';
 import * as util from 'util';
 
 const exec = util.promisify(require('child_process').exec);
-const configFile = '.github/autolabel.json';
+const configFile = '.github/auto-label.json';
 const tools = new Toolkit({
   event: ['pull_request.opened', 'pull_request.synchronize'],
 });
