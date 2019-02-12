@@ -15,7 +15,7 @@ const util = require("util");
 const exec = util.promisify(require('child_process').exec);
 const configFile = '.github/autolabel.json';
 const tools = new actions_toolkit_1.Toolkit({
-    event: ['pull_requests.created', 'pull_requests.synchronize'],
+    event: ['pull_request.opened', 'pull_request.synchronize'],
 });
 const getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lodash_1.pick(allLabels, labelNames)));
 (async () => {

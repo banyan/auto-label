@@ -14,7 +14,7 @@ import * as util from 'util';
 const exec = util.promisify(require('child_process').exec);
 const configFile = '.github/autolabel.json';
 const tools = new Toolkit({
-  event: ['pull_requests.created', 'pull_requests.synchronize'],
+  event: ['pull_request.opened', 'pull_request.synchronize'],
 });
 
 const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
