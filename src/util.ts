@@ -1,7 +1,7 @@
-import { pick, values } from 'lodash';
+import pick from 'lodash.pick';
 import { Label, LabelName } from './interface';
 
 export const getLabelIds = (
   allLabels: Label[],
   labelNames: LabelName[],
-): string => JSON.stringify(values(pick(allLabels, labelNames)));
+): string => JSON.stringify(Object.values(pick(allLabels, labelNames)));

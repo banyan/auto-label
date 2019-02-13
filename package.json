@@ -9,10 +9,10 @@
   "dependencies": {
     "actions-toolkit": "^1.4.0",
     "ignore": "^5.0.5",
-    "lodash": "^4.17.11"
+    "lodash.pick": "^4.4.0"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.120",
+    "@types/lodash.pick": "^4.4.4",
     "@types/node": "^10.12.24",
     "fuse-box": "^3.7.0",
     "tslib": "^1.9.3",

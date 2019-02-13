@@ -162,8 +162,8 @@ ___scope___.file("util.js", function(exports, require, module, __filename, __dir
 
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const lodash_1 = require("lodash");
-exports.getLabelIds = (allLabels, labelNames) => JSON.stringify(lodash_1.values(lodash_1.pick(allLabels, labelNames)));
+const lodash_pick_1 = require("lodash.pick");
+exports.getLabelIds = (allLabels, labelNames) => JSON.stringify(Object.values(lodash_pick_1.default(allLabels, labelNames)));
 
 });
 return ___scope___.entry = "entrypoint.js";
