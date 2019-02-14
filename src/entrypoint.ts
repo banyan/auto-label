@@ -52,8 +52,8 @@ const tools = new Toolkit({
   // TODO: handle stderr
   const { stdout, stderr } = await exec(
     `git diff --name-only $(git merge-base ${
-      result.repository.pullRequest.baseRefName
-    } ${result.repository.pullRequest.headRefName})`,
+      result.repository.pullRequest.headRefOid
+    } ${result.repository.pullRequest.baseRefOid})`,
   );
 
   const diffFiles = stdout.trim().split('\n');
