@@ -36,8 +36,9 @@ const tools = new actions_toolkit_1.Toolkit({
         return acc;
     }, {});
     const currentLabelNames = new Set(result.repository.pullRequest.labels.edges.map((edge) => edge.node.name));
+    const { headRefOid, baseRefOid } = result.repository.pullRequest;
     // TODO: handle stderr
-    const { stdout, stderr } = await exec(`git diff --name-only $(git merge-base ${result.repository.pullRequest.headRefOid} ${result.repository.pullRequest.baseRefOid})`);
+    const { stdout, stderr } = await exec(`git merge-base --is-ancestor ${baseRefOid} ${headRefOid} && git diff --name-only ${baseRefOid} || git diff --name-only $(git merge-base ${baseRefOid} ${headRefOid})`);
     const diffFiles = stdout.trim().split('\n');
     const newLabelNames = new Set(diffFiles.reduce((acc, file) => {
         Object.entries(config.rules).forEach(([label, pattern]) => {
