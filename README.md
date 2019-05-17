@@ -13,7 +13,7 @@ workflow "auto-label" {
 }
 
 action "Auto label" {
-  uses = "banyan/auto-label@master"
+  uses = "lightspeedretail/auto-label@master"
   secrets = ["GITHUB_TOKEN"]
 }
 ```
