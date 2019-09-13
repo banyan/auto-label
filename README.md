@@ -32,7 +32,7 @@ Pattern matching is following `.gitignore` [spec](https://git-scm.com/docs/gitig
   "rules": {
     "frontend": ["*.js", "*.css", "*.html"],
     "backend": ["app/", "*.rb"],
-    "ci": ".circleci",
+    "ci": ".circleci"
   }
 }
 ```
