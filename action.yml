@@ -8,7 +8,5 @@ inputs:
     description: 'A path for config file'
     default: '.github/auto-label.json'
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
-  args:
-    - ${{ inputs.configPath }}
+  using: 'node12'
+  main: 'dist/entrypoint.js'
