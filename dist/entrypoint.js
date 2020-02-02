@@ -5,102 +5,152 @@ ___scope___.file("entrypoint.js", function(exports, require, module, __filename,
 
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs = require("fs");
-const path = require("path");
-const actions_toolkit_1 = require("actions-toolkit");
-const query_1 = require("./query");
+const tslib_1 = require("tslib");
+const fs = tslib_1.__importStar(require("fs"));
+const path = tslib_1.__importStar(require("path"));
+const util = tslib_1.__importStar(require("util"));
+const core = tslib_1.__importStar(require("@actions/core"));
+const github = tslib_1.__importStar(require("@actions/github"));
+const graphql_1 = require("@octokit/graphql");
+const ignore_1 = tslib_1.__importDefault(require("ignore"));
 const util_1 = require("./util");
-const util = require("util");
-const ignore_1 = require("ignore");
+const query_1 = require("./query");
 const exec = util.promisify(require('child_process').exec);
-const configFile = '.github/auto-label.json';
-const tools = new actions_toolkit_1.Toolkit({
-    event: ['pull_request.opened', 'pull_request.synchronize'],
-});
-(async () => {
-    if (!fs.existsSync(path.join(tools.workspace, configFile))) {
-        tools.exit.neutral('config file does not exist.');
-    }
-    const config = JSON.parse(tools.getFile(configFile));
-    let result;
+async function run() {
     try {
-        result = await query_1.getPullRequestAndLabels(tools, tools.context.issue());
+        const token = process.env['GITHUB_TOKEN'];
+        if (!token) {
+            core.setFailed('GITHUB_TOKEN does not exist.');
+            return;
+        }
+        const graphqlWithAuth = graphql_1.graphql.defaults({
+            headers: { authorization: `token ${token}` },
+        });
+        const configPath = path.join(__dirname, core.getInput('configPath'));
+        if (!fs.existsSync(configPath)) {
+            core.setFailed(`configFile does not exist in ${configPath}.`);
+        }
+        const config = JSON.parse(fs.readFileSync(configPath).toString());
+        util_1.logger.debug('config', config);
+        util_1.logger.debug('github.context.eventName', github.context.eventName);
+        if (github.context.eventName !== 'pull_request') {
+            return;
+        }
+        const payload = github.context
+            .payload;
+        util_1.logger.debug('payload.action', payload.action);
+        if (payload.action !== 'opened' && payload.action !== 'synchronize') {
+            return;
+        }
+        const owner = payload.repository.owner.login;
+        const repo = payload.repository.name;
+        const number = payload.pull_request.number;
+        let result;
+        try {
+            result = await query_1.getPullRequestAndLabels(graphqlWithAuth, {
+                owner,
+                repo,
+                number,
+            });
+        }
+        catch (error) {
+            error();
+            core.error(`Request failed: ${JSON.stringify(error.message)}`);
+            core.setFailed('getPullRequestAndLabels has been failed.');
+        }
+        util_1.logger.debug('result', result);
+        if (!result) {
+            return core.setFailed(`result was empty: ${result}`);
+        }
+        const allLabels = result.repository.labels.edges.reduce((acc, edge) => {
+            acc[edge.node.name] = edge.node.id;
+            return acc;
+        }, {});
+        util_1.logger.debug('allLabels', allLabels);
+        const currentLabelNames = new Set(result.repository.pullRequest.labels.edges.map((edge) => edge.node.name));
+        util_1.logger.debug('currentLabelNames', currentLabelNames);
+        const { headRefOid, baseRefOid } = result.repository.pullRequest;
+        const { stdout } = await exec(`git fetch && git merge-base --is-ancestor ${baseRefOid} ${headRefOid} && git diff --name-only ${baseRefOid} || git diff --name-only $(git merge-base ${baseRefOid} ${headRefOid})`);
+        const diffFiles = stdout.trim().split('\n');
+        const newLabelNames = new Set(diffFiles.reduce((acc, file) => {
+            Object.entries(config.rules).forEach(([label, pattern]) => {
+                if (ignore_1.default()
+                    .add(pattern)
+                    .ignores(file)) {
+                    acc.push(label);
+                }
+            });
+            return acc;
+        }, []));
+        const ruledLabelNames = new Set(Object.keys(config.rules));
+        const labelNamesToAdd = new Set([...newLabelNames].filter(labelName => !currentLabelNames.has(labelName)));
+        const labelNamesToRemove = new Set([...currentLabelNames].filter((labelName) => !newLabelNames.has(labelName) && ruledLabelNames.has(labelName)));
+        util_1.logger.debug('labelNamesToAdd', labelNamesToAdd);
+        util_1.logger.debug('labelNamesToRemove', labelNamesToRemove);
+        const labelableId = result.repository.pullRequest.id;
+        util_1.logger.debug('labelableId', labelableId);
+        if (labelNamesToAdd.size > 0) {
+            try {
+                await query_1.addLabelsToLabelable(graphqlWithAuth, {
+                    labelIds: util_1.getLabelIds(allLabels, [...labelNamesToAdd]),
+                    labelableId,
+                });
+                console.log('Added labels: ', labelNamesToAdd);
+            }
+            catch (error) {
+                util_1.logger.error('Request failed', error.message);
+                core.setFailed('addLabelsToLabelable has been failed. ');
+            }
+        }
+        if (labelNamesToRemove.size > 0) {
+            try {
+                await query_1.removeLabelsFromLabelable(graphqlWithAuth, {
+                    labelIds: util_1.getLabelIds(allLabels, [
+                        ...labelNamesToRemove,
+                    ]),
+                    labelableId,
+                });
+                console.log('Removed labels: ', labelNamesToRemove);
+            }
+            catch (error) {
+                util_1.logger.error('Request failed', error.message);
+                core.setFailed('removeLabelsFromLabelable has been failed. ');
+            }
+        }
     }
     catch (error) {
-        console.error('Request failed: ', error.request, error.message);
-        tools.exit.failure('getPullRequestAndLabels has been failed.');
+        core.setFailed(error.message);
     }
-    console.log('Result: ', result);
-    const allLabels = result.repository.labels.edges.reduce((acc, edge) => {
-        acc[edge.node.name] = edge.node.id;
-        return acc;
-    }, {});
-    const currentLabelNames = new Set(result.repository.pullRequest.labels.edges.map((edge) => edge.node.name));
-    const { headRefOid, baseRefOid } = result.repository.pullRequest;
-    // TODO: handle stderr
-    const { stdout, stderr } = await exec(`git merge-base --is-ancestor ${baseRefOid} ${headRefOid} && git diff --name-only ${baseRefOid} || git diff --name-only $(git merge-base ${baseRefOid} ${headRefOid})`);
-    const diffFiles = stdout.trim().split('\n');
-    const newLabelNames = new Set(diffFiles.reduce((acc, file) => {
-        Object.entries(config.rules).forEach(([label, pattern]) => {
-            if (ignore_1.default()
-                .add(pattern)
-                .ignores(file)) {
-                acc.push(label);
-            }
-        });
-        return acc;
-    }, []));
-    const ruledLabelNames = new Set(Object.keys(config.rules));
-    const labelNamesToAdd = new Set([...newLabelNames].filter(labelName => !currentLabelNames.has(labelName)));
-    const labelNamesToRemove = new Set([...currentLabelNames].filter((labelName) => !newLabelNames.has(labelName) && ruledLabelNames.has(labelName)));
-    console.log(' ---> Current status');
-    console.log('allLabels: ', allLabels);
-    console.log('currentLabelNames: ', currentLabelNames);
-    console.log('diffFiles: ', diffFiles);
-    console.log('newLabelNames: ', newLabelNames);
-    console.log('ruledLabelNames: ', ruledLabelNames);
-    console.log('labelNamesToAdd: ', labelNamesToAdd);
-    console.log('labelNamesToRemove: ', labelNamesToRemove);
-    const labelableId = result.repository.pullRequest.id;
-    if (labelNamesToAdd.size > 0) {
-        try {
-            await query_1.addLabelsToLabelable(tools, {
-                labelIds: util_1.getLabelIds(allLabels, [...labelNamesToAdd]),
-                labelableId,
-            });
-            console.log('Added labels: ', labelNamesToAdd);
-        }
-        catch (error) {
-            console.error('Request failed: ', error.request, error.message);
-            tools.exit.failure('addLabelsToLabelable has been failed. ');
-        }
-    }
-    if (labelNamesToRemove.size > 0) {
-        try {
-            await query_1.removeLabelsFromLabelable(tools, {
-                labelIds: util_1.getLabelIds(allLabels, [
-                    ...labelNamesToRemove,
-                ]),
-                labelableId,
-            });
-            console.log('Removed labels: ', labelNamesToRemove);
-        }
-        catch (error) {
-            console.error('Request failed: ', error.request, error.message);
-            tools.exit.failure('removeLabelsFromLabelable has been failed. ');
-        }
-    }
-})();
+}
+run();
+
+});
+___scope___.file("util.js", function(exports, require, module, __filename, __dirname){
+
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const tslib_1 = require("tslib");
+const core = tslib_1.__importStar(require("@actions/core"));
+const lodash_pick_1 = tslib_1.__importDefault(require("lodash.pick"));
+exports.getLabelIds = (allLabels, labelNames) => JSON.stringify(Object.values(lodash_pick_1.default(allLabels, labelNames)));
+exports.logger = {
+    debug: (message, object) => {
+        return core.debug(`${message}: ${JSON.stringify(object)}`);
+    },
+    error: (message, object) => {
+        return core.error(`${message}: ${JSON.stringify(object)}`);
+    },
+};
 
 });
 ___scope___.file("query.js", function(exports, require, module, __filename, __dirname){
 
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPullRequestAndLabels = (tools, { owner, repo, number, }) => {
-    const query = `{
-    repository(owner: "${owner}", name: "${repo}") {
-      pullRequest(number: ${number}) {
+exports.getPullRequestAndLabels = (graphqlWithAuth, { owner, repo, number, }) => {
+    const query = `query pullRequestAndLabels($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner:$owner, name:$repo) {
+      pullRequest(number:$number) {
         id
         baseRefOid
         headRefOid
@@ -131,40 +181,39 @@ exports.getPullRequestAndLabels = (tools, { owner, repo, number, }) => {
       resetAt
     }
   }`;
-    return tools.github.graphql(query, {
+    return graphqlWithAuth(query, {
+        owner,
+        repo,
+        number,
         headers: { Accept: 'application/vnd.github.ocelot-preview+json' },
     });
 };
-exports.addLabelsToLabelable = (tools, { labelIds, labelableId, }) => {
+exports.addLabelsToLabelable = (graphqlWithAuth, { labelIds, labelableId, }) => {
     const query = `
-    mutation {
-      addLabelsToLabelable(input: {labelIds: ${labelIds}, labelableId: "${labelableId}"}) {
+    mutation addLabelsToLabelable($labelIds: String!, $labelableId: String!) {
+      addLabelsToLabelable(input: {labelIds:$labelIds, labelableId:$labelableId}) {
         clientMutationId
       }
     }`;
-    return tools.github.graphql(query, {
+    return graphqlWithAuth(query, {
+        labelIds,
+        labelableId,
         headers: { Accept: 'application/vnd.github.starfire-preview+json' },
     });
 };
-exports.removeLabelsFromLabelable = (tools, { labelIds, labelableId, }) => {
+exports.removeLabelsFromLabelable = (graphqlWithAuth, { labelIds, labelableId, }) => {
     const query = `
-    mutation {
-      removeLabelsFromLabelable(input: {labelIds: ${labelIds}, labelableId: "${labelableId}"}) {
+    mutation removeLabelsFromLabelable($labelIds: String!, $labelableId: String!) {
+      removeLabelsFromLabelable(input: {labelIds:$labelIds, labelableId:$labelableId}) {
         clientMutationId
       }
     }`;
-    return tools.github.graphql(query, {
+    return graphqlWithAuth(query, {
+        labelIds,
+        labelableId,
         headers: { Accept: 'application/vnd.github.starfire-preview+json' },
     });
 };
-
-});
-___scope___.file("util.js", function(exports, require, module, __filename, __dirname){
-
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const lodash_1 = require("lodash");
-exports.getLabelIds = (allLabels, labelNames) => JSON.stringify(Object.values(lodash_1.pick(allLabels, labelNames)));
 
 });
 return ___scope___.entry = "entrypoint.js";
