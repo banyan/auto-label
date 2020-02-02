@@ -1,4 +1,4 @@
-name: 'autolabel'
+name: 'auto-label'
 description: 'Add labels to Pull Request based on matched file patterns'
 branding:
   icon: 'flag'
