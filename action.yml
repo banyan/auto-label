@@ -1,0 +1,14 @@
+name: 'autolabel'
+description: 'Add labels to Pull Request based on matched file patterns'
+branding:
+  icon: 'flag'
+  color: 'gray-dark'
+inputs:
+  configPath:
+    description: 'A path for config file'
+    default: '.github/auto-label.json'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.configPath }}
