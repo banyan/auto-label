@@ -1,8 +1,13 @@
-import { Toolkit } from 'actions-toolkit';
-import { LabelName } from './interface';
+import { graphql } from '@octokit/graphql';
+import * as OctokitTypes from '@octokit/types';
+
+type Graphql = (
+  query: string,
+  options?: OctokitTypes.RequestParameters,
+) => ReturnType<typeof graphql>;
 
 export const getPullRequestAndLabels = (
-  tools: Toolkit,
+  graphqlWithAuth: Graphql,
   {
     owner,
     repo,
@@ -13,9 +18,9 @@ export const getPullRequestAndLabels = (
     number: number;
   },
 ) => {
-  const query = `{
-    repository(owner: "${owner}", name: "${repo}") {
-      pullRequest(number: ${number}) {
+  const query = `query pullRequestAndLabels($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner:$owner, name:$repo) {
+      pullRequest(number:$number) {
         id
         baseRefOid
         headRefOid
@@ -47,13 +52,16 @@ export const getPullRequestAndLabels = (
     }
   }`;
 
-  return tools.github.graphql(query, {
+  return graphqlWithAuth(query, {
+    owner,
+    repo,
+    number,
     headers: { Accept: 'application/vnd.github.ocelot-preview+json' },
   });
 };
 
 export const addLabelsToLabelable = (
-  tools: Toolkit,
+  graphqlWithAuth: Graphql,
   {
     labelIds,
     labelableId,
@@ -63,19 +71,21 @@ export const addLabelsToLabelable = (
   },
 ) => {
   const query = `
-    mutation {
-      addLabelsToLabelable(input: {labelIds: ${labelIds}, labelableId: "${labelableId}"}) {
+    mutation addLabelsToLabelable($labelIds: String!, $labelableId: String!) {
+      addLabelsToLabelable(input: {labelIds:$labelIds, labelableId:$labelableId}) {
         clientMutationId
       }
     }`;
 
-  return tools.github.graphql(query, {
+  return graphqlWithAuth(query, {
+    labelIds,
+    labelableId,
     headers: { Accept: 'application/vnd.github.starfire-preview+json' },
   });
 };
 
 export const removeLabelsFromLabelable = (
-  tools: Toolkit,
+  graphqlWithAuth: Graphql,
   {
     labelIds,
     labelableId,
@@ -85,13 +95,15 @@ export const removeLabelsFromLabelable = (
   },
 ) => {
   const query = `
-    mutation {
-      removeLabelsFromLabelable(input: {labelIds: ${labelIds}, labelableId: "${labelableId}"}) {
+    mutation removeLabelsFromLabelable($labelIds: String!, $labelableId: String!) {
+      removeLabelsFromLabelable(input: {labelIds:$labelIds, labelableId:$labelableId}) {
         clientMutationId
       }
     }`;
 
-  return tools.github.graphql(query, {
+  return graphqlWithAuth(query, {
+    labelIds,
+    labelableId,
     headers: { Accept: 'application/vnd.github.starfire-preview+json' },
   });
 };
