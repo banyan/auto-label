@@ -3,7 +3,6 @@
 yarn clean
 yarn
 yarn build
-cp .gitignore .gitignore.bak
 cat .gitignore | grep --line-buffered -v node_modules > .gitignore.new # redirect the grep command output to same file is not possible
 mv .gitignore.new .gitignore
 rm -rf node_modules
