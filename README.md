@@ -4,18 +4,21 @@
 
 ## Installation
 
-To configure the action simply add the following lines to your `.github/main.workflow` workflow file:
+To configure the action simply add the following lines to your `.github/workflows/auto-label.yml` file:
 
-```
-workflow "auto-label" {
-  on = "pull_request"
-  resolves = ["Auto label"]
-}
+```yaml
+name: Auto Label
+on: pull_request
 
-action "Auto label" {
-  uses = "banyan/auto-label@master"
-  secrets = ["GITHUB_TOKEN"]
-}
+jobs:
+  auto-label:
+    name: Auto Label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: banyan/auto-label@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 And configure by creating `.github/auto-label.json` file.
@@ -42,6 +45,10 @@ Pattern matching is following `.gitignore` [spec](https://git-scm.com/docs/gitig
 * Remove label in the PR if the file has been removed.
 * If there's no adding / removing labels, it will only consumes 1 point of rate limit score.
   * https://developer.github.com/v4/guides/resource-limitations/
+
+## Tips
+
+* In case if you want to debug the response quickly, just set `ACTIONS_STEP_DEBUG` as `true` on Secrets from Settings of GitHub.
 
 ### TODO
 
