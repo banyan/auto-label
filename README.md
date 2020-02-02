@@ -8,7 +8,9 @@ To configure the action simply add the following lines to your `.github/workflow
 
 ```yaml
 name: Auto Label
-on: pull_request
+on:
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   auto-label:
