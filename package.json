@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@actions/core": "^1.2.2",
-    "@actions/exec": "^1.0.3",
     "@actions/github": "^2.1.0",
     "@octokit/graphql": "^4.3.1",
     "lodash.pick": "^4.4.0",
