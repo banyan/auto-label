@@ -1,5 +1,5 @@
 {
-  "name": "my-cool-action",
+  "name": "auto-label",
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
