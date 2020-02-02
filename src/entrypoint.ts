@@ -93,7 +93,7 @@ async function run() {
       ),
     );
 
-    logger.debug('currentLabelNames', currentLabelNames);
+    logger.debug('currentLabelNames', Array.from(currentLabelNames));
 
     const { headRefOid, baseRefOid } = result.repository.pullRequest;
 
@@ -118,6 +118,8 @@ async function run() {
       }, []),
     );
 
+    logger.debug('newLabelNames', newLabelNames);
+
     const ruledLabelNames = new Set(Object.keys(config.rules));
 
     const labelNamesToAdd = new Set(
@@ -133,8 +135,9 @@ async function run() {
       ),
     );
 
-    logger.debug('labelNamesToAdd', labelNamesToAdd);
-    logger.debug('labelNamesToRemove', labelNamesToRemove);
+    logger.debug('ruledLabelNames', Array.from(ruledLabelNames));
+    logger.debug('labelNamesToAdd', Array.from(labelNamesToAdd));
+    logger.debug('labelNamesToRemove', Array.from(labelNamesToRemove));
 
     const labelableId = result.repository.pullRequest.id;
 
