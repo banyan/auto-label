@@ -55,7 +55,3 @@ Pattern matching is following `.gitignore` [spec](https://git-scm.com/docs/gitig
 ### TODO
 
 * Handle pagination of label (currently only handles 100)
-
-## License
-
-MIT
