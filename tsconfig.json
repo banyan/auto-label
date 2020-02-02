@@ -5,6 +5,7 @@
     "allowJs": true,
     "importHelpers": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "esModuleInterop": true
   }
 }
