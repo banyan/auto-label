@@ -68,7 +68,7 @@ async function run() {
         }, {});
         util_1.logger.debug('allLabels', allLabels);
         const currentLabelNames = new Set(result.repository.pullRequest.labels.edges.map((edge) => edge.node.name));
-        util_1.logger.debug('currentLabelNames', currentLabelNames);
+        util_1.logger.debug('currentLabelNames', Array.from(currentLabelNames));
         const { headRefOid, baseRefOid } = result.repository.pullRequest;
         const { stdout } = await exec(`git fetch && git merge-base --is-ancestor ${baseRefOid} ${headRefOid} && git diff --name-only ${baseRefOid} || git diff --name-only $(git merge-base ${baseRefOid} ${headRefOid})`);
         const diffFiles = stdout.trim().split('\n');
@@ -82,11 +82,13 @@ async function run() {
             });
             return acc;
         }, []));
+        util_1.logger.debug('newLabelNames', newLabelNames);
         const ruledLabelNames = new Set(Object.keys(config.rules));
         const labelNamesToAdd = new Set([...newLabelNames].filter(labelName => !currentLabelNames.has(labelName)));
         const labelNamesToRemove = new Set([...currentLabelNames].filter((labelName) => !newLabelNames.has(labelName) && ruledLabelNames.has(labelName)));
-        util_1.logger.debug('labelNamesToAdd', labelNamesToAdd);
-        util_1.logger.debug('labelNamesToRemove', labelNamesToRemove);
+        util_1.logger.debug('ruledLabelNames', Array.from(ruledLabelNames));
+        util_1.logger.debug('labelNamesToAdd', Array.from(labelNamesToAdd));
+        util_1.logger.debug('labelNamesToRemove', Array.from(labelNamesToRemove));
         const labelableId = result.repository.pullRequest.id;
         util_1.logger.debug('labelableId', labelableId);
         if (labelNamesToAdd.size > 0) {
@@ -132,7 +134,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const core = tslib_1.__importStar(require("@actions/core"));
 const lodash_pick_1 = tslib_1.__importDefault(require("lodash.pick"));
-exports.getLabelIds = (allLabels, labelNames) => JSON.stringify(Object.values(lodash_pick_1.default(allLabels, labelNames)));
+exports.getLabelIds = (allLabels, labelNames) => Object.values(lodash_pick_1.default(allLabels, labelNames));
 exports.logger = {
     debug: (message, object) => {
         return core.debug(`${message}: ${JSON.stringify(object)}`);
@@ -190,7 +192,7 @@ exports.getPullRequestAndLabels = (graphqlWithAuth, { owner, repo, number, }) =>
 };
 exports.addLabelsToLabelable = (graphqlWithAuth, { labelIds, labelableId, }) => {
     const query = `
-    mutation addLabelsToLabelable($labelIds: String!, $labelableId: String!) {
+    mutation addLabelsToLabelable($labelIds: [ID!]!, $labelableId: ID!) {
       addLabelsToLabelable(input: {labelIds:$labelIds, labelableId:$labelableId}) {
         clientMutationId
       }
@@ -203,7 +205,7 @@ exports.addLabelsToLabelable = (graphqlWithAuth, { labelIds, labelableId, }) => 
 };
 exports.removeLabelsFromLabelable = (graphqlWithAuth, { labelIds, labelableId, }) => {
     const query = `
-    mutation removeLabelsFromLabelable($labelIds: String!, $labelableId: String!) {
+    mutation removeLabelsFromLabelable($labelIds: [ID!]!, $labelableId: ID!) {
       removeLabelsFromLabelable(input: {labelIds:$labelIds, labelableId:$labelableId}) {
         clientMutationId
       }
