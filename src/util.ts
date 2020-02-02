@@ -2,10 +2,8 @@ import * as core from '@actions/core';
 import pick from 'lodash.pick';
 
 import { Label, LabelName } from './interface';
-export const getLabelIds = (
-  allLabels: Label[],
-  labelNames: LabelName[],
-): string => JSON.stringify(Object.values(pick(allLabels, labelNames)));
+export const getLabelIds = (allLabels: Label[], labelNames: LabelName[]) =>
+  Object.values(pick(allLabels, labelNames));
 
 export const logger = {
   debug: (message: string, object: {} | null | undefined) => {

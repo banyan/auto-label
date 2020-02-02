@@ -1,3 +1,4 @@
+import { Label } from './interface';
 import { graphql } from '@octokit/graphql';
 import * as OctokitTypes from '@octokit/types';
 
@@ -66,12 +67,12 @@ export const addLabelsToLabelable = (
     labelIds,
     labelableId,
   }: {
-    labelIds: string;
+    labelIds: (Label | undefined)[];
     labelableId: string;
   },
 ) => {
   const query = `
-    mutation addLabelsToLabelable($labelIds: String!, $labelableId: String!) {
+    mutation addLabelsToLabelable($labelIds: [ID!]!, $labelableId: ID!) {
       addLabelsToLabelable(input: {labelIds:$labelIds, labelableId:$labelableId}) {
         clientMutationId
       }
@@ -90,12 +91,12 @@ export const removeLabelsFromLabelable = (
     labelIds,
     labelableId,
   }: {
-    labelIds: string;
+    labelIds: (Label | undefined)[];
     labelableId: string;
   },
 ) => {
   const query = `
-    mutation removeLabelsFromLabelable($labelIds: String!, $labelableId: String!) {
+    mutation removeLabelsFromLabelable($labelIds: [ID!]!, $labelableId: ID!) {
       removeLabelsFromLabelable(input: {labelIds:$labelIds, labelableId:$labelableId}) {
         clientMutationId
       }
