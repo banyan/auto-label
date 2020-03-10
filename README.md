@@ -23,6 +23,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+NOTE: `pull_request` event is triggered by [many actions](https://developer.github.com/v3/activity/events/types/#pullrequestevent), so please make sure to filter by `[opened, synchronize]` of [on.<event_name>.types](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#onevent_nametypes) as in the example above.
+
 And configure by creating `.github/auto-label.json` file.
 The format is `label: rule`:
 
