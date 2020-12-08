@@ -27,13 +27,7 @@ async function run() {
       headers: { authorization: `token ${token}` },
     });
 
-    //const configPath = path.join(__dirname, core.getInput('configPath'));
-    const configPath = core.getInput('configPath');
-    if (!fs.existsSync(configPath)) {
-      core.setFailed(`configFile does not exist in ${configPath}.`);
-    }
-
-    const config = JSON.parse(fs.readFileSync(configPath).toString());
+    const config = JSON.parse(core.getInput('rules'));
 
     logger.debug('config', config);
     logger.debug('github.context.eventName', github.context.eventName);
