@@ -3,10 +3,5 @@
 yarn clean
 yarn
 yarn build
-cat .gitignore | grep --line-buffered -v node_modules > .gitignore.new # redirect the grep command output to same file is not possible
-mv .gitignore.new .gitignore
-rm -rf node_modules
-yarn install --production
-git add .gitignore
-git add node_modules
-git ci -m 'Add prod dependencies'
+
+git ci -m 'Built minified release'

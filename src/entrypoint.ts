@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as util from 'util';
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
@@ -9,14 +8,13 @@ import Webhooks from '@octokit/webhooks';
 import ignore from 'ignore';
 
 import { logger, getLabelIds } from './util';
-import { Label, LabelEdge, LabelName } from './interface';
+import { Label, LabelEdge, LabelName, FileEdge } from './interface';
 import {
   addLabelsToLabelable,
   removeLabelsFromLabelable,
   getPullRequestAndLabels,
+  getPullRequestFiles,
 } from './query';
-
-const exec = util.promisify(require('child_process').exec);
 
 async function run() {
   try {
@@ -25,6 +23,7 @@ async function run() {
       core.setFailed('GITHUB_TOKEN does not exist.');
       return;
     }
+
     const graphqlWithAuth = graphql.defaults({
       headers: { authorization: `token ${token}` },
     });
@@ -95,13 +94,15 @@ async function run() {
 
     logger.debug('currentLabelNames', Array.from(currentLabelNames));
 
-    const { headRefOid, baseRefOid } = result.repository.pullRequest;
+    const diffFiles = await getPullRequestFiles(graphqlWithAuth, {
+      owner,
+      repo,
+      number,
+    });
 
-    const { stdout } = await exec(
-      `git fetch && git merge-base --is-ancestor ${baseRefOid} ${headRefOid} && git diff --name-only ${baseRefOid} || git diff --name-only $(git merge-base ${baseRefOid} ${headRefOid})`,
-    );
-
-    const diffFiles = stdout.trim().split('\n');
+    if (!diffFiles) {
+      return core.setFailed(`requestedFiles was empty: ${diffFiles}`);
+    }
 
     const newLabelNames = new Set(
       diffFiles.reduce((acc: LabelName[], file: string) => {

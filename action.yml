@@ -9,4 +9,4 @@ inputs:
     default: '.github/auto-label.json'
 runs:
   using: 'node12'
-  main: 'dist/entrypoint.js'
+  main: 'dist/index.js'

@@ -17,7 +17,6 @@ jobs:
     name: Auto Label
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
       - uses: banyan/auto-label@1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
