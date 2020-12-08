@@ -1,6 +1,9 @@
-import { Label } from './interface';
+import * as core from '@actions/core';
 import { graphql } from '@octokit/graphql';
 import * as OctokitTypes from '@octokit/types';
+
+import { logger } from './util';
+import { Label, FileEdge } from './interface';
 
 type Graphql = (
   query: string,
@@ -59,6 +62,88 @@ export const getPullRequestAndLabels = (
     number,
     headers: { Accept: 'application/vnd.github.ocelot-preview+json' },
   });
+};
+
+export const getPullRequestFiles = async (
+  graphqlWithAuth: Graphql,
+  {
+    owner,
+    repo,
+    number,
+  }: {
+    owner: string;
+    repo: string;
+    number: number;
+  },
+) => {
+  const query = `query pullRequestFiles($owner: String!, $repo: String!, $number: Int!, $endCursor: String!) {
+    repository(owner:$owner, name:$repo) {
+      pullRequest(number:$number) {
+        files(first: 5, after:$endCursor) {
+          edges {
+            node {
+              path
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+    rateLimit {
+      limit
+      cost
+      remaining
+      resetAt
+    }
+  }`;
+
+  const diffFiles: string[] = [];
+  let hasNextPage = true;
+  let endCursor = '';
+
+  while (hasNextPage) {
+    try {
+      const requestedFiles = await graphqlWithAuth(query, {
+        owner,
+        repo,
+        number,
+        endCursor,
+        headers: { Accept: 'application/vnd.github.ocelot-preview+json' },
+      });
+
+      logger.debug('requestedFiles', requestedFiles);
+
+      if (!requestedFiles) {
+        return diffFiles;
+      }
+
+      const files = requestedFiles.repository.pullRequest.files;
+
+      files.edges.reduce((acc: string[], edge: FileEdge) => {
+        acc.push(edge.node.path);
+        return acc;
+      }, diffFiles);
+
+      // Set the endCursor so that the next fetch if there is one, grabs the next page
+      endCursor = files.pageInfo.endCursor;
+
+      // Terminal conditions for pagination loop
+      if (!files.pageInfo.hasNextPage || diffFiles.length > 500) {
+        hasNextPage = false;
+      }
+    } catch (error) {
+      if (typeof error === 'function') {
+        error();
+      }
+      core.error(`Request failed: ${JSON.stringify(error.message)}`);
+    }
+  }
+
+  // Return the accumulated list of files
+  return diffFiles;
 };
 
 export const addLabelsToLabelable = (

@@ -1,0 +1,29 @@
+name: Auto Label
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  auto_label_pr_job:
+    runs-on: ubuntu-latest
+    name: Auto label a PR
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Label PR
+        uses: ./ # Uses an action in the root directory
+        id: pr-auto-labeler
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          rules: >
+            {
+              "actions": [".github/"],
+              "frontend": ["*.css", "*.html", "*.js"],
+              "backend": ["app/", "*.rb"],
+              "ci": [".circleci"],
+              "documentaion": ["*.md"]
+            }

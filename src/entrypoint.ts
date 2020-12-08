@@ -1,7 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as util from 'util';
-
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { graphql } from '@octokit/graphql';
@@ -14,9 +10,8 @@ import {
   addLabelsToLabelable,
   removeLabelsFromLabelable,
   getPullRequestAndLabels,
+  getPullRequestFiles,
 } from './query';
-
-const exec = util.promisify(require('child_process').exec);
 
 async function run() {
   try {
@@ -25,19 +20,14 @@ async function run() {
       core.setFailed('GITHUB_TOKEN does not exist.');
       return;
     }
+
     const graphqlWithAuth = graphql.defaults({
       headers: { authorization: `token ${token}` },
     });
 
-    const configPath = path.join(__dirname, core.getInput('configPath'));
+    const rules = JSON.parse(core.getInput('rules'));
 
-    if (!fs.existsSync(configPath)) {
-      core.setFailed(`configFile does not exist in ${configPath}.`);
-    }
-
-    const config = JSON.parse(fs.readFileSync(configPath).toString());
-
-    logger.debug('config', config);
+    logger.debug('rules', rules);
     logger.debug('github.context.eventName', github.context.eventName);
 
     if (github.context.eventName !== 'pull_request') {
@@ -95,17 +85,19 @@ async function run() {
 
     logger.debug('currentLabelNames', Array.from(currentLabelNames));
 
-    const { headRefOid, baseRefOid } = result.repository.pullRequest;
+    const diffFiles = await getPullRequestFiles(graphqlWithAuth, {
+      owner,
+      repo,
+      number,
+    });
 
-    const { stdout } = await exec(
-      `git fetch && git merge-base --is-ancestor ${baseRefOid} ${headRefOid} && git diff --name-only ${baseRefOid} || git diff --name-only $(git merge-base ${baseRefOid} ${headRefOid})`,
-    );
-
-    const diffFiles = stdout.trim().split('\n');
+    if (!diffFiles) {
+      return core.setFailed(`requestedFiles was empty: ${diffFiles}`);
+    }
 
     const newLabelNames = new Set(
       diffFiles.reduce((acc: LabelName[], file: string) => {
-        Object.entries(config.rules).forEach(([label, pattern]) => {
+        Object.entries(rules).forEach(([label, pattern]) => {
           if (
             ignore()
               .add(pattern as string)
@@ -120,7 +112,7 @@ async function run() {
 
     logger.debug('newLabelNames', newLabelNames);
 
-    const ruledLabelNames = new Set(Object.keys(config.rules));
+    const ruledLabelNames = new Set(Object.keys(rules));
 
     const labelNamesToAdd = new Set(
       ([...newLabelNames] as LabelName[]).filter(
