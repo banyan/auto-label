@@ -18,5 +18,3 @@ jobs:
         id: pr-auto-labeler
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          configPath: ../.github/auto-label.json

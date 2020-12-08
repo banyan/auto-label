@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
@@ -8,7 +7,7 @@ import Webhooks from '@octokit/webhooks';
 import ignore from 'ignore';
 
 import { logger, getLabelIds } from './util';
-import { Label, LabelEdge, LabelName, FileEdge } from './interface';
+import { Label, LabelEdge, LabelName } from './interface';
 import {
   addLabelsToLabelable,
   removeLabelsFromLabelable,
@@ -28,8 +27,8 @@ async function run() {
       headers: { authorization: `token ${token}` },
     });
 
-    const configPath = path.join(__dirname, core.getInput('configPath'));
-
+    //const configPath = path.join(__dirname, core.getInput('configPath'));
+    const configPath = core.getInput('configPath');
     if (!fs.existsSync(configPath)) {
       core.setFailed(`configFile does not exist in ${configPath}.`);
     }
