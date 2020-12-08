@@ -4,9 +4,9 @@ branding:
   icon: 'flag'
   color: 'gray-dark'
 inputs:
-  configPath:
-    description: 'A path for config file'
-    default: '.github/auto-label.json'
+  rules:
+    description: 'PR Labeling rules, follows gitignore syntax'
+    required: true
 runs:
   using: 'node12'
   main: 'dist/index.js'

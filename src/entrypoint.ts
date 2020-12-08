@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { graphql } from '@octokit/graphql';
@@ -27,15 +25,9 @@ async function run() {
       headers: { authorization: `token ${token}` },
     });
 
-    //const configPath = path.join(__dirname, core.getInput('configPath'));
-    const configPath = core.getInput('configPath');
-    if (!fs.existsSync(configPath)) {
-      core.setFailed(`configFile does not exist in ${configPath}.`);
-    }
+    const rules = JSON.parse(core.getInput('rules'));
 
-    const config = JSON.parse(fs.readFileSync(configPath).toString());
-
-    logger.debug('config', config);
+    logger.debug('rules', rules);
     logger.debug('github.context.eventName', github.context.eventName);
 
     if (github.context.eventName !== 'pull_request') {
@@ -105,7 +97,7 @@ async function run() {
 
     const newLabelNames = new Set(
       diffFiles.reduce((acc: LabelName[], file: string) => {
-        Object.entries(config.rules).forEach(([label, pattern]) => {
+        Object.entries(rules).forEach(([label, pattern]) => {
           if (
             ignore()
               .add(pattern as string)
@@ -120,7 +112,7 @@ async function run() {
 
     logger.debug('newLabelNames', newLabelNames);
 
-    const ruledLabelNames = new Set(Object.keys(config.rules));
+    const ruledLabelNames = new Set(Object.keys(rules));
 
     const labelNamesToAdd = new Set(
       ([...newLabelNames] as LabelName[]).filter(

@@ -20,12 +20,19 @@ jobs:
       - uses: banyan/auto-label@1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          rules: >
+            {
+              "actions": [".github/"],
+              "frontend": ["*.css", "*.html", "*.js"],
+              "backend": ["app/", "*.rb"],
+              "ci": [".circleci"]
+            }
 ```
 
 NOTE: `pull_request` event is triggered by [many actions](https://developer.github.com/v3/activity/events/types/#pullrequestevent), so please make sure to filter by `[opened, synchronize]` of [on.<event_name>.types](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#onevent_nametypes) as in the example above.
 
-And configure by creating `.github/auto-label.json` file.
-The format is `label: rule`:
+The format for the `rules` configuration is `label: rule`:
 
 ```ts
 { [key: string]: string | string[] }
@@ -33,14 +40,14 @@ The format is `label: rule`:
 
 Pattern matching is following `.gitignore` [spec](https://git-scm.com/docs/gitignore#_pattern_format) using by [node-ignore](https://github.com/kaelzhang/node-ignore).
 
-```json
-{
-  "rules": {
-    "frontend": ["*.js", "*.css", "*.html"],
-    "backend": ["app/", "*.rb"],
-    "ci": ".circleci"
-  }
-}
+```yaml
+    rules: >
+      {
+        "actions": [".github/"],
+        "frontend": ["*.css", "*.html", "*.js"],
+        "backend": ["app/", "*.rb"],
+        "ci": [".circleci"]
+      }
 ```
 
 ## Features

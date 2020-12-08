@@ -18,3 +18,12 @@ jobs:
         id: pr-auto-labeler
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          rules: >
+            {
+              "actions": [".github/"],
+              "frontend": ["*.css", "*.html", "*.js"],
+              "backend": ["app/", "*.rb"],
+              "ci": [".circleci"],
+              "documentaion": ["*.md"]
+            }
